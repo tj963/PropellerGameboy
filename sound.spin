@@ -193,6 +193,72 @@ done_c2_freq            nop
 channel3                nop
 
 
+channel4                nop
+read_nr41               rdbyte tmp, nr41_addr
+                        cmp tmp, test_value     wz
+              if_z      jmp #read_nr43
+                        wrbyte test_value, nr41_addr
+                        mov nr41, tmp
+                        and tmp, #$3F
+                        neg c4_length, tmp
+                        add c4_length, #64
+
+read_nr43               rdbyte tmp, nr43_addr
+                        cmp tmp, test_value     wz
+              if_z      jmp #read_nr44
+                        wrbyte test_value, nr43_addr
+                        mov nr43, tmp
+                        mov c4_freq_cnt, #0
+                        test nr43, #$04         wz
+              if_nz     add c4_freq_cnt, #96
+                        test nr43, #$02         wz
+              if_nz     add c4_freq_cnt, #48
+                        test nr43, #$01         wz
+              if_nz     add c4_freq_cnt, #24
+                        cmp c4_freq_cnt, #0     wz
+              if_z      mov c4_freq_cnt, #12
+                        shr tmp, #4
+                        add tmp, #9
+                        shl c4_freq_cnt, tmp
+
+read_nr44               rdbyte tmp, nr44_addr
+                        cmp tmp, test_value     wz
+              if_z      jmp #check_c4_init
+                        wrbyte test_value, nr44_addr
+                        mov nr44, tmp
+
+check_c4_init           test nr44, #$80         wc
+              if_nc     jmp #do_c4
+                        andn nr44, #$80
+                        or nr52_set, #$08
+                        mov c4_shift, c4_shift_init
+                        rdbyte nr42, nr42_addr
+                        mov c4_volume, nr42
+                        shr c4_volume, #4       wz
+              if_z      test nr42, #$08         wz
+              if_z      andn nr42, #$07
+                        mov c4_period, nr42
+                        and c4_period, #$07
+
+do_c4                   mov saved_cnt, cnt
+              if_c      jmp #do_c4_freq
+                        mov tmp, saved_cnt
+                        sub tmp, c4_prev_cnt
+                        cmp tmp, c4_freq_cnt    wc
+              if_b      jmp #done_c4_freq
+do_c4_freq              mov c4_prev_cnt, saved_cnt
+                        mov tmp, #$80
+                        test nr43, #$08         wz
+              if_z      shl tmp, #8
+                        test c4_shift, #$02     wz
+                        shr c4_shift, #1        wc
+              if_z      muxc c4_shift, tmp
+              if_nz     muxnc c4_shift, tmp
+                        test c4_shift, tmp      wc
+                        muxc c4_output, c4_volume
+done_c4_freq            nop
+
+
 check_frame             mov saved_cnt, cnt
                         mov tmp, saved_cnt
                         sub tmp, frame_prev_cnt
@@ -221,6 +287,13 @@ do_frame_length_c2      test nr24, #$40         wz
               if_nz     or nr52_set, #$02
               if_z      or nr52_clear, #$02
 do_frame_length_c3      nop
+do_frame_length_c4      test nr44, #$40         wz
+              if_nz     test nr52, #$08         wz
+              if_z      jmp #done_frame
+                        sub c4_length, #1       wz
+                        and c4_length, #$3F
+              if_nz     or nr52_set, #$08
+              if_z      or nr52_clear, #$08
                         jmp #done_frame
 
 
@@ -262,6 +335,23 @@ sub_frame_volume_c2     sub c2_volume, #1       wz
               if_z      andn nr22, #$07
 
 do_frame_volume_c3      nop
+
+do_frame_volume_c4      and nr42, #$07          wz
+              if_nz     test nr52, #$08         wz
+              if_z      jmp #done_frame
+                        sub c4_period, #1       wz
+              if_nz     jmp #done_frame
+                        mov c4_period, nr42
+                        and c4_period, #$07
+                        test nr42, #$08         wz
+              if_z      jmp #sub_frame_volume_c4
+                        add c4_volume, #1
+                        test c4_volume, #$0F    wz
+              if_z      mov c4_volume, #$0F
+              if_z      andn nr42, #$07
+                        jmp #done_frame
+sub_frame_volume_c4     sub c4_volume, #1       wz
+              if_z      andn nr42, #$07
                         jmp #done_frame
 
 check_frame_sweep       nop
@@ -279,10 +369,12 @@ done_frame              nop
                         and tmp, nr52
 
                         mov output, #0
-                        test tmp, #$02          wz
-              if_nz     add output, c2_output
                         test tmp, #$01          wz
               if_nz     add output, c1_output
+                        test tmp, #$02          wz
+              if_nz     add output, c2_output
+                        test tmp, #$08          wz
+              if_nz     add output, c4_output
 
                         rdbyte nr50, #$77
                         rdbyte nr50, nr50_addr
@@ -295,17 +387,17 @@ done_frame              nop
                         add nr50, #1
 
                         mov tmp, #0
-                        test nr50, #$08
-              if_nz     add tmp, output         wz
+                        test nr50, #$08         wz
+              if_nz     add tmp, output
                         shl tmp, #1
-                        test nr50, #$04
-              if_nz     add tmp, output         wz
+                        test nr50, #$04         wz
+              if_nz     add tmp, output
                         shl tmp, #1
-                        test nr50, #$02
-              if_nz     add tmp, output         wz
+                        test nr50, #$02         wz
+              if_nz     add tmp, output
                         shl tmp, #1
-                        test nr50, #$01
-              if_nz     add tmp, output         wz
+                        test nr50, #$01         wz
+              if_nz     add tmp, output
 
                         shl tmp, #23
 do_output               mov frqa, tmp
@@ -335,6 +427,15 @@ nr23                    long 0
 nr23_addr               long $3F18
 nr24                    long 0
 nr24_addr               long $3F19
+
+nr41                    long 0
+nr41_addr               long $3F20
+nr42                    long 0
+nr42_addr               long $3F21
+nr43                    long 0
+nr43_addr               long $3F22
+nr44                    long 0
+nr44_addr               long $3F23
 
 nr50                    long 0
 nr50_addr               long $3F24
@@ -366,6 +467,15 @@ c2_period               long 0
 c2_volume               long 0
 c2_output               long 0
 
+c4_length               long $FFFFFFFF
+c4_freq_cnt             long 0
+c4_prev_cnt             long $FFFFFFFF
+c4_shift                long 0
+c4_shift_init           long $0000FFFF
+c4_volume               long 0
+c4_output               long 0
+c4_period               long 0
+
 frame_step              long 0
 frame_cnt               long 196608
 frame_prev_cnt          long 0
@@ -396,4 +506,5 @@ ctr0                    long 0
 ctr1                    long 0
 ctr2                    long 0
 ctr3                    long 0
+                        fit 496
 
