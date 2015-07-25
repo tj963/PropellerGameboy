@@ -4,7 +4,6 @@ CON
 
 OBJ
   cpu           : "cpu"
-  'driver        : "driver"
   lcd           : "lcd2"
   sprite        : "sprite"
   video         : "video"
@@ -15,7 +14,6 @@ OBJ
 PUB Main
   byte[$7FFF][0] := $FF
 
-  'cpu.Main
   video.Main
   lcd.Main
   sprite.Main
