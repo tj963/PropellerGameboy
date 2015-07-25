@@ -40,6 +40,9 @@ main_loop               rdbyte stat, stat_addr
                         and work_d, #$07
                         or stat, work_d
                         wrbyte stat, stat_read_addr
+                        '''
+                        'wrbyte stat, mailbox_long_d2
+                        '''
 
                         mov if_lcd, #0
                         lockclr if_lcd_lock     wc
@@ -196,6 +199,7 @@ cnt_write_data          long 0
 cnt_write_wait          long 0
 
 mailbox_long_d            long $3DF4
+mailbox_long_d2         long $3DF6
                         fit 496
 
 DAT
@@ -231,14 +235,11 @@ int_check_ext           nop
                         add pc, #1
                         mov opcode, #$FF
                         and opcode, ina
+                        shl opcode, #5
 
                         '''
-                        'mov opcode, ina
-                        'wrlong opcode, mailbox_long
-                        'jmp #$
+                        'wrword pc, mailbox_long
                         '''
-'
-                        shl opcode, #5
 
                         rdlong el_ins0, opcode
                         add opcode, #4
@@ -265,6 +266,10 @@ int_check_int           nop
                         rdbyte opcode, pc
                         add pc, #1
                         shl opcode, #5
+
+                        '''
+                        'wrword pc, mailbox_long
+                        '''
 
                         rdlong il_ins0, opcode
                         add opcode, #4
