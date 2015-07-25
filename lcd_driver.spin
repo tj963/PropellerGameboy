@@ -18,6 +18,7 @@ lcd_loop                mov ly, #0
 
 enable_wait             rdbyte lcdc, lcdc_addr
                         test lcdc, #$80         wz
+              if_z      wrbyte ly, stat_write_addr
               if_z      jmp #enable_wait
 
                         mov line_count, #144
@@ -51,7 +52,7 @@ line_loop               wrbyte ly, ly_control_addr
                         mov line_count, #10
 
                         mov stat_flags, #1
-                        mov stat_mode_flag, #$10
+                        mov stat_mode_flag, #$30
                         call #update_stat
 
                         mov stat_mode_flag, #$00
@@ -97,7 +98,7 @@ lcdc_addr               long $3F40
 stat                    long 0
 stat_flags              long 0
 stat_mode_flag          long 0
-stat_read_addr          long $3D41
+stat_read_addr          long $3F41
 stat_write_addr         long $3DC1
 ly                      long 0
 ly_addr                 long $3F44
