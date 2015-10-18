@@ -235,6 +235,10 @@ int_check_ext           nop
                         add pc, #1
                         mov opcode, #$FF
                         and opcode, ina
+                        '''
+                        'wrword opcode, mailbox_long
+                        'jmp #$
+                        '''
                         shl opcode, #5
 
                         '''
@@ -812,7 +816,7 @@ sp                      long $FFFE
 pc                      long $100
 '''
 'pc                      long $4000
-'pc                      long $4000
+'pc                      long $103
 '''
 z_flag                  long $80
 
@@ -841,8 +845,8 @@ io_start                long $FF00
 
 read_mask               long $80FFFF00
 switch_mask             long $00FFFFFF
-'write_mask              long $40FFFFFF
-write_mask              long $08FFFFFF
+write_mask              long $40FFFFFF
+'''write_mask              long $08FFFFFF
 no_addr_mask            long $80000000
 
 mask_16                 long $FFFF
