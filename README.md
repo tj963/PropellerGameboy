@@ -10,3 +10,5 @@ The implementation is pretty complete. What's not implemented:
 3. The DAA instructions - More correctly the half-carry and subtract flags it requires. Not nearly enough cycles. You can see the that the score counts in hex.
 
 4. There are some display and input bugs I haven't tracked down.
+
+More details, a video, and a some screenshots are can be found on the Propeller forums: https://forums.parallax.com/discussion/162647/gameboy-emulator
